@@ -9,5 +9,4 @@ func main() {
 	frame.InitConfig()
 	//启用监听
 	frame.StartListen()
-
 }

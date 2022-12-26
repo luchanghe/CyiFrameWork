@@ -10,7 +10,6 @@ func InitConfig() {
 	CyiManege.loadlanguage()
 	CyiManege.loadFilterWord()
 	CyiManege.loadwhiteList()
-	CyiManege.loadHttpRoute()
 
 }
 
@@ -41,14 +40,4 @@ func (o *cyiManageInfo) loadwhiteList() {
 		"白名单": "白名单",
 	}
 	fmt.Println("白名单加载完成")
-}
-
-func (o *cyiManageInfo) loadHttpRoute() {
-	o.HttpRoute = map[string]string{
-		"/Action10001": "Action10001",
-		"/Action10002": "Action10002",
-		"/Banshichu1":  "Banshichu1",
-		"/Banshichu2":  "Banshichu2",
-	}
-	fmt.Println("http监听路由加载完成")
 }

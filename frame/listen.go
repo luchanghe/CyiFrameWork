@@ -2,7 +2,9 @@ package frame
 
 import (
 	"Cyi/action"
-	"fmt"
+	"bytes"
+	"encoding/json"
+	"io"
 	"net/http"
 	"reflect"
 )
@@ -11,23 +13,43 @@ func StartListen() {
 	listenHttp()
 	listenWebSocket()
 	listenTcp()
+	//阻止主程序关闭
+	select {}
+}
+
+type ActionJson struct {
+	Action    string `json:"Action"`
+	SecretKey string `json:"SecretKey"`
 }
 
 func listenHttp() {
 
-	var validateFunc action.Action
-	for key, name := range CyiManege.HttpRoute {
-		routeFunc := name
-		fmt.Println(key, routeFunc)
-		http.HandleFunc(key, func(writer http.ResponseWriter, request *http.Request) {
-			reflect.ValueOf(&validateFunc).MethodByName(routeFunc).Call(valOf(writer, request))
+	go func() {
+		var validateFunc action.Action
+		http.HandleFunc("/request", func(writer http.ResponseWriter, request *http.Request) {
+			if request.Method != "POST" {
+				writer.WriteHeader(405)
+				return
+			}
+			reqData, err := io.ReadAll(request.Body)
+			if err != nil {
+				writer.WriteHeader(400)
+				return
+			}
+			reqJsonStruct := ActionJson{}
+			if err := json.Unmarshal(reqData, &reqJsonStruct); err != nil {
+				writer.WriteHeader(400)
+				return
+			}
+			//验证令牌
+			request.Body = io.NopCloser(bytes.NewBuffer(reqData))
+			reflect.ValueOf(&validateFunc).MethodByName(reqJsonStruct.Action).Call(valOf(writer, request))
 		})
-	}
-
-	err := http.ListenAndServe("127.0.0.1:8080", nil)
-	if err != nil {
-		return
-	}
+		err := http.ListenAndServe(":8080", nil)
+		if err != nil {
+			return
+		}
+	}()
 }
 
 func listenWebSocket() {
